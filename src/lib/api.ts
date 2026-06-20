@@ -44,13 +44,19 @@ export interface DashboardSummary {
     digital_rev_pct: number;
     dea_ccr: number;
     malmquist_tfp: number;
+    dmm_score?: number;
+    npv_mlrd?: number;
+    garch_volatility?: number;
   };
   forecast_2030: {
     revenue_mlrd: number;
     ebitda_margin: number;
     arpu_som: number;
+    arpu_usd?: number;
     bs_5g: number;
     digital_rev_pct: number;
+    dea_ccr?: number;
+    dmm_score?: number;
   };
   ols_key_result: {
     r_squared: number;
@@ -94,6 +100,13 @@ export interface MetricsResponse {
     cloud_rev_mlrd?: number;
     fiber_km?: number;
     coverage_pct?: number;
+    mobile_coverage_pct?: number;
+    fixed_capital_mlrd?: number;
+    it_invest_mlrd?: number;
+    energy_cost_mlrd?: number;
+    arpu_usd?: number;
+    dea_ccr?: number;
+    dmm_score?: number;
   }[];
 }
 
@@ -208,8 +221,10 @@ export interface Benchmark2025Response {
   }[];
   uzbektelecom_position: {
     ccr_rank: number;
-    revenue_rank: number;
-    nps_rank: number;
+    revenue_rank?: number;
+    nps_rank?: number;
+    digital_rank?: number;
+    infrastructure_rank?: number;
     tfp_rank: number;
   };
 }
@@ -218,7 +233,7 @@ export interface DigitalServicesResponse {
   operator: string;
   method: string;
   trend: { year: number; share: number; digital_revenue_mlrd: number; is_forecast: boolean }[];
-  breakdown_2025: { name: string; value: number }[];
+  breakdown_2025: { name: string; value: number; revenue_mlrd?: number; beta?: number }[];
   summary: {
     share_2025: number;
     share_2030: number;
@@ -226,6 +241,10 @@ export interface DigitalServicesResponse {
     digital_revenue_2030: number;
     digital_revenue_cagr_2025_2030: number;
     ds_invest_beta: number;
+    traditional_beta?: number;
+    internet_subscribers_mln?: number;
+    cloud_revenue_2023?: number;
+    arpu_2023?: number;
   };
 }
 
@@ -233,7 +252,7 @@ export interface GarchRevenueResponse {
   operator: string;
   method: string;
   parameters: { omega: number; alpha: number; beta: number; persistence: number };
-  summary: { annual_volatility: number; stationary: boolean; observations: number };
+  summary: { annual_volatility: number; stationary: boolean; observations: number; covid_peak?: number };
   volatility: { period: string; q: number; year: number; return_pct: number; vol: number; variance: number; is_forecast: boolean }[];
 }
 
@@ -242,7 +261,7 @@ export interface MonteCarloNpvResponse {
   method: string;
   iterations: number;
   discount_rate: number;
-  summary: { mean_npv: number; success_probability: number; irr_base: number; payback_years: number; sigma: number };
+  summary: { mean_npv: number; success_probability: number; irr_base: number; payback_years: number; sigma: number; cv?: number; investment?: number };
   scenarios: { name: string; prob: number; npv: number; irr: number; payback: number; color: string }[];
   distribution: { npv: number; freq: number }[];
 }
@@ -280,7 +299,7 @@ export interface RecommendationsResponse {
 
 export const fetchDashboardSummary = () => apiGet<DashboardSummary>("/api/dashboard/summary");
 
-export const fetchMetrics = (operatorCode: string, yearFrom = 2020, yearTo = 2030, includeForecast = true) =>
+export const fetchMetrics = (operatorCode: string, yearFrom = 2015, yearTo = 2028, includeForecast = true) =>
   apiGet<MetricsResponse>(`/api/metrics/${operatorCode}?year_from=${yearFrom}&year_to=${yearTo}&include_forecast=${includeForecast}`);
 
 export const fetchDeaResults2025 = () => apiGet<DeaResults2025Response>("/api/dea/results/2025");
@@ -289,7 +308,7 @@ export const fetchOlsDissertation = () => apiGet<OlsDissertationResponse>("/api/
 
 export const fetchMalmquistUzbtk = () => apiGet<MalmquistUzbtkResponse>("/api/dea/malmquist/uzbtk");
 
-export const fetchForecastUzbtk = (variable = "revenue_mlrd") =>
+export const fetchForecastUzbtk = (variable = "digital_rev_pct") =>
   apiGet<ForecastUzbtkResponse>(`/api/forecast/uzbtk?variable=${encodeURIComponent(variable)}&include_scenarios=true`);
 
 export const fetchForecastAll2030 = () => apiGet<ForecastAll2030Response>("/api/forecast/all-variables/2030");

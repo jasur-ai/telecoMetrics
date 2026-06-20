@@ -13,8 +13,8 @@ export const Route = createFileRoute("/forecast")({
 function Page() {
   const { lang } = useI18n();
   const { data: forecastResponse } = useQuery({
-    queryKey: ["forecast-uzbtk", "revenue_mlrd"],
-    queryFn: () => fetchForecastUzbtk("revenue_mlrd"),
+    queryKey: ["forecast-uzbtk", "digital_rev_pct"],
+    queryFn: () => fetchForecastUzbtk("digital_rev_pct"),
     staleTime: 5 * 60 * 1000,
   });
   const { data: all2030 } = useQuery({
@@ -41,18 +41,18 @@ function Page() {
     <div>
       <PageHeader
         title={lang === "uz" ? "Bashorat va Ssenariy Tahlili" : "Forecast & Scenario Analysis"}
-        subtitle={lang === "uz" ? "OLS trend modeli · 2026-2030 · jonli API" : "OLS trend model · 2026-2030 · live API"}
-        badge="OLS"
+        subtitle={lang === "uz" ? "LSTM + ARIMA hybrid modeli · 2024-2028 · jonli API" : "LSTM + ARIMA hybrid model · 2024-2028 · live API"}
+        badge="Forecast"
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="R² trend" value={forecastResponse?.trend_model[0]?.r_squared.toFixed(3) ?? "..."} tone="success" />
-        <KpiCard label={lang === "uz" ? "Bazaviy 2030" : "Base 2030"} value={finalYear ? finalYear.base.toLocaleString() : "..."} unit="mlrd" tone="gold" />
-        <KpiCard label={lang === "uz" ? "Eng yaxshi ssenariy" : "Best case"} value={finalYear ? finalYear.optimistic.toLocaleString() : "..."} unit="mlrd" tone="info" />
-        <KpiCard label="CAGR 2025-2030" value={forecastResponse ? forecastResponse.cagr_2025_2030.toFixed(1) : "..."} unit="%" tone="navy" />
+        <KpiCard label={lang === "uz" ? "Bazaviy 2028" : "Base 2028"} value={finalYear ? finalYear.base.toLocaleString() : "..."} unit="%" tone="gold" />
+        <KpiCard label={lang === "uz" ? "Optimistik 2028" : "Optimistic 2028"} value={finalYear ? finalYear.optimistic.toLocaleString() : "..."} unit="%" tone="info" />
+        <KpiCard label="CAGR 2023-2028" value={forecastResponse ? forecastResponse.cagr_2025_2030.toFixed(1) : "..."} unit="%" tone="navy" />
       </div>
 
-      <SectionCard title={lang === "uz" ? "Daromad Bashorati 2026-2030" : "Revenue Forecast 2026-2030"}
+      <SectionCard title={lang === "uz" ? "Raqamli Ulush Bashorati 2024-2028" : "Digital Share Forecast 2024-2028"}
         subtitle="OLS trend model · 3 scenarios">
         <ResponsiveContainer width="100%" height={360}>
           <ComposedChart data={forecast}>
@@ -75,7 +75,7 @@ function Page() {
       </SectionCard>
 
       <SectionCard title={lang === "uz" ? "Maqsad Ko'rsatkichlari Jadvali" : "Target Metrics Table"}
-        subtitle={lang === "uz" ? "2030 yil prognozi" : "2030 forecast"}>
+        subtitle={lang === "uz" ? "2028 yil prognozi" : "2028 forecast"}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

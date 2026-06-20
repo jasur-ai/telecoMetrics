@@ -42,10 +42,10 @@ function Page() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label={lang === "uz" ? "TFP (2020–2025)" : "TFP (2020–2025)"} value={mq ? mq.result.tfp.toFixed(2) : "1.46"} tone="gold"
           hint={lang === "uz" ? "Kumulativ" : "Cumulative"} />
-        <KpiCard label="EC (Efficiency Change)" value={mq ? mq.result.efficiency_change_ec.toFixed(2) : "1.24"} tone="info"
-          hint={mq ? `+${((mq.result.efficiency_change_ec - 1) * 100).toFixed(0)}%` : "+24%"} />
+        <KpiCard label="EC (Efficiency Change)" value={mq ? mq.result.efficiency_change_ec.toFixed(2) : "1.18"} tone="info"
+          hint={mq ? `+${((mq.result.efficiency_change_ec - 1) * 100).toFixed(0)}%` : "+18%"} />
         <KpiCard label="TC (Technical Change)" value={mq ? mq.result.technology_change_tc.toFixed(2) : "1.18"} tone="success"
-          hint={mq ? `+${((mq.result.technology_change_tc - 1) * 100).toFixed(0)}%` : "+18%"} />
+          hint={mq ? `+${((mq.result.technology_change_tc - 1) * 100).toFixed(0)}%` : "+24%"} />
         <KpiCard label={lang === "uz" ? "Mintaqaviy o'rin" : "Regional standing"}
           value={mq ? mq.result.benchmark : (lang === "uz" ? "Eng yuqori TFP" : "Highest TFP")} tone="navy" />
       </div>
@@ -105,8 +105,8 @@ function Page() {
         </div>
         <p className="text-xs text-muted-foreground mt-3">
           {lang === "uz"
-            ? "EC o'sishi TC dan sekinroq — texnologik yangilashlar amalga oshirilsa ham, foydalanish samaradorligi orqada qoladi. DEA-CCR=0.76 natijasi bilan uyg'un."
-            : "EC growth lags TC — technology is being adopted, but utilization efficiency trails. Consistent with DEA-CCR=0.76."}
+            ? "EC o'sishi TC dan sekinroq — texnologik yangilashlar amalga oshirilsa ham, foydalanish samaradorligi orqada qoladi. DEA-CCR=0.72 natijasi bilan uyg'un."
+            : "EC growth lags TC — technology is being adopted, but utilization efficiency trails. Consistent with DEA-CCR=0.72."}
         </p>
       </SectionCard>
     </div>

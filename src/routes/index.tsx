@@ -48,12 +48,12 @@ function Dashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const capex = ols?.result.coefficients.capex_mlrd;
-  const dsInvest = ols?.result.coefficients.ds_invest_mlrd;
-  const betaTotal = (capex?.coef ?? 0) + (dsInvest?.coef ?? 0);
-  const capexPct = betaTotal ? ((capex?.coef ?? 0) / betaTotal) * 100 : 0;
-  const dsPct = betaTotal ? ((dsInvest?.coef ?? 0) / betaTotal) * 100 : 0;
-  const ratio = capex?.coef ? (dsInvest?.coef ?? 0) / capex.coef : 0;
+  const digitalBeta = ols?.result.coefficients.digital_services ?? ols?.result.coefficients.ds_invest_mlrd;
+  const traditionalBeta = ols?.result.coefficients.traditional_services ?? ols?.result.coefficients.capex_mlrd;
+  const betaTotal = (digitalBeta?.coef ?? 0) + (traditionalBeta?.coef ?? 0);
+  const digitalPct = betaTotal ? ((digitalBeta?.coef ?? 0) / betaTotal) * 100 : 0;
+  const traditionalPct = betaTotal ? ((traditionalBeta?.coef ?? 0) / betaTotal) * 100 : 0;
+  const ratio = traditionalBeta?.coef ? (digitalBeta?.coef ?? 0) / traditionalBeta.coef : 0;
 
   const revenueTrend = live?.chart_data.revenue_trend ?? [];
   const revenueChartData = revenueTrend.map((d) => ({
@@ -73,8 +73,8 @@ function Dashboard() {
       <PageHeader
         title={lang === "uz" ? "Bosh Panel — Umumiy Ko'rinish" : "Dashboard — Overview"}
         subtitle={lang === "uz"
-          ? "O'zbektelekom AK raqamli iqtisodiyot ko'rsatkichlari · 2020–2030 · jonli API"
-          : "O'zbektelekom JSC digital economy indicators · 2020–2030 · live API"}
+          ? "O'zbektelekom AK raqamli iqtisodiyot ko'rsatkichlari · 2015-2028 · jonli API"
+          : "O'zbektelekom JSC digital economy indicators · 2015-2028 · live API"}
         badge={lang === "uz" ? "Asosiy Panel" : "Main Panel"}
       />
 
@@ -92,8 +92,8 @@ function Dashboard() {
             <p className="text-sm text-foreground/80 max-w-4xl">
               {ols
                 ? (lang === "uz"
-                    ? `Raqamli xizmatlar investitsiyasi (DS_invest) kapital investitsiyasiga (CAPEX) nisbatan EBITDA ga ${ratio.toFixed(2)}× kuchliroq ta'sir ko'rsatadi (R² = ${ols.result.r_squared.toFixed(3)}, p < 0.001).`
-                    : `Digital-services investment (DS_invest) drives EBITDA ${ratio.toFixed(2)}× more strongly than capital investment (CAPEX) (R² = ${ols.result.r_squared.toFixed(3)}, p < 0.001).`)
+                    ? `Raqamli xizmatlar investitsiyasi (raqamli xizmatlar) kapital investitsiyasiga (an'anaviy xizmatlar) nisbatan EBITDA ga ${ratio.toFixed(2)}× kuchliroq ta'sir ko'rsatadi (R² = ${ols.result.r_squared.toFixed(3)}, p < 0.001).`
+                    : `Digital-services investment (raqamli xizmatlar) drives EBITDA ${ratio.toFixed(2)}× more strongly than traditional services (an'anaviy xizmatlar) (R² = ${ols.result.r_squared.toFixed(3)}, p < 0.001).`)
                 : (lang === "uz" ? "Jonli ma'lumotlar yuklanmoqda..." : "Loading live data...")}
             </p>
           </div>
@@ -102,7 +102,7 @@ function Dashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label={t("kpi_dea")} value={live ? live.dea_summary.ccr_score.toFixed(2) : "0.76"} tone="gold"
+        <KpiCard label={t("kpi_dea")} value={live ? live.dea_summary.ccr_score.toFixed(2) : "0.72"} tone="gold"
           hint={live ? `${t("target")}: 0.85 · #${live.dea_summary.rank_in_region} ${lang === "uz" ? "mintaqada" : "in region"}` : `${t("target")}: 0.85`}
           icon={<Target className="size-4" />} />
         <KpiCard label={t("kpi_tfp")} value={live ? live.dea_summary.tfp.toFixed(2) : "1.46"} tone="info"
@@ -117,7 +117,7 @@ function Dashboard() {
 
       {/* Charts row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-        <SectionCard title={t("revenue_dyn")} subtitle={lang === "uz" ? "mlrd so'm · 2020–2030 · jonli API" : "bln UZS · 2020–2030 · live API"}>
+        <SectionCard title={t("revenue_dyn")} subtitle={lang === "uz" ? "mlrd so'm · 2015-2028 · jonli API" : "bln UZS · 2015-2028 · live API"}>
           {revenueChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={revenueChartData}>
@@ -136,9 +136,9 @@ function Dashboard() {
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
                 <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Area type="monotone" dataKey="actual" name={lang === "uz" ? "Haqiqiy (2020–2025)" : "Actual (2020–2025)"}
+                <Area type="monotone" dataKey="actual" name={lang === "uz" ? "Haqiqiy (2015-2023)" : "Actual (2015-2023)"}
                   stroke="var(--color-navy)" fill="url(#actualGrad)" strokeWidth={2.5} connectNulls />
-                <Area type="monotone" dataKey="forecast" name={lang === "uz" ? "Prognoz (2026–2030)" : "Forecast (2026–2030)"}
+                <Area type="monotone" dataKey="forecast" name={lang === "uz" ? "Prognoz (2024-2028)" : "Forecast (2024-2028)"}
                   stroke="var(--color-gold)" fill="url(#forecastGrad)" strokeWidth={2.5} strokeDasharray="5 5" connectNulls />
               </AreaChart>
             </ResponsiveContainer>
@@ -150,7 +150,7 @@ function Dashboard() {
         </SectionCard>
 
         <SectionCard title={lang === "uz" ? "DEA-CCR — Mintaqaviy Taqqoslama" : "DEA-CCR — Regional Comparison"}
-          subtitle={lang === "uz" ? "DEA-CCR ball · 2025 · jonli API" : "DEA-CCR score · 2025 · live API"}>
+          subtitle={lang === "uz" ? "DEA-CCR ball · 2023 · jonli API" : "DEA-CCR score · 2023 · live API"}>
           {deaComparison.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={deaComparison} layout="vertical" margin={{ left: 20 }}>
@@ -177,12 +177,12 @@ function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <SectionCard title={t("beta_compare")} subtitle={lang === "uz" ? "OLS Regressiya · jonli API" : "OLS Regression · live API"}>
           <div className="space-y-4">
-            <BetaBar label={lang === "uz" ? "β DS_invest (raqamli investitsiya)" : "β DS_invest (digital investment)"}
-              value={dsInvest?.coef ?? 1.376} pct={dsPct || 82.9} tone="success" />
-            <BetaBar label="β CAPEX" value={capex?.coef ?? 0.284} pct={capexPct || 17.1} tone="navy" />
+            <BetaBar label={lang === "uz" ? "β raqamli xizmatlar (raqamli investitsiya)" : "β raqamli xizmatlar (digital services)"}
+              value={digitalBeta?.coef ?? 0.847} pct={digitalPct || 82.6} tone="success" />
+            <BetaBar label="β an'anaviy xizmatlar" value={traditionalBeta?.coef ?? 0.178} pct={traditionalPct || 17.4} tone="navy" />
             <div className="pt-3 border-t text-center">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">{lang === "uz" ? "Nisbat" : "Ratio"}</div>
-              <div className="kpi-value text-gold mt-1">{(ratio || 4.85).toFixed(2)}×</div>
+              <div className="kpi-value text-gold mt-1">{(ratio || 4.76).toFixed(2)}×</div>
               <div className="text-xs text-muted-foreground mt-1">
                 R² = {ols ? ols.result.r_squared.toFixed(3) : "0.971"} · p &lt; 0.001
               </div>
@@ -203,7 +203,7 @@ function Dashboard() {
           <div className="space-y-3 text-sm">
             <Row label="Previous -> current" value={dmm ? `${dmm.summary.previous_score.toFixed(2)} -> ${dmm.summary.current_score.toFixed(2)}` : "..."} tone="navy" hint={dmm ? `+${dmm.summary.delta.toFixed(2)}` : undefined} />
             <Row label={lang === "uz" ? "Yetuklik darajasi" : "Maturity stage"} value={dmm ? (lang === "uz" ? `Bosqich ${dmm.summary.maturity_stage}` : `Stage ${dmm.summary.maturity_stage}`) : "..."} tone="info" />
-            <Row label={lang === "uz" ? "Maqsad 2025" : "Goal 2025"} value={dmm ? `${dmm.summary.target_2025.toFixed(1)} / 5.0` : "..."} tone="success" />
+            <Row label={lang === "uz" ? "Maqsad 2028" : "Goal 2028"} value={dmm ? `${dmm.summary.target_2025.toFixed(1)} / 5.0` : "..."} tone="success" />
             <Row label={lang === "uz" ? "Mintaqaviy o'rin" : "Regional rank"} value={lang === "uz" ? "Infra: 1 · Xizmat: 3" : "Infra: 1 · Service: 3"} tone="gold" />
           </div>
         </SectionCard>

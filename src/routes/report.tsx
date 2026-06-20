@@ -19,9 +19,9 @@ function Page() {
   const { data: monteCarlo } = useQuery({ queryKey: ["monte-carlo-npv-uzbtk"], queryFn: fetchMonteCarloNpvUzbtk, staleTime: 5 * 60 * 1000 });
   const { data: digital } = useQuery({ queryKey: ["digital-services-uzbtk"], queryFn: fetchDigitalServicesUzbtk, staleTime: 5 * 60 * 1000 });
   const { data: recommendations } = useQuery({ queryKey: ["recommendations"], queryFn: fetchRecommendations, staleTime: 5 * 60 * 1000 });
-  const capex = ols?.result.coefficients.capex_mlrd.coef;
-  const dsInvest = ols?.result.coefficients.ds_invest_mlrd.coef;
-  const betaRatio = capex ? (dsInvest ?? 0) / capex : 0;
+  const traditional = (ols?.result.coefficients.traditional_services ?? ols?.result.coefficients.capex_mlrd)?.coef;
+  const digitalCoef = (ols?.result.coefficients.digital_services ?? ols?.result.coefficients.ds_invest_mlrd)?.coef;
+  const betaRatio = traditional ? (digitalCoef ?? 0) / traditional : 0;
   const revenueData = dashboard?.chart_data.revenue_trend.map((r) => ({
     year: r.year,
     total: r.value,
@@ -29,8 +29,8 @@ function Page() {
   })) ?? [];
   const findings = [
     lang === "uz"
-      ? `DS_invest/CAPEX ta'sir nisbati ${betaRatio ? betaRatio.toFixed(2) : "..."}x, R² = ${ols?.result.r_squared.toFixed(3) ?? "..."}; raqamli investitsiya EBITDA ga kuchliroq ta'sir qiladi.`
-      : `DS_invest/CAPEX effect ratio is ${betaRatio ? betaRatio.toFixed(2) : "..."}x, R² = ${ols?.result.r_squared.toFixed(3) ?? "..."}; digital investment drives EBITDA more strongly.`,
+      ? `Raqamli/an'anaviy xizmatlar ta'sir nisbati ${betaRatio ? betaRatio.toFixed(2) : "..."}x, R? = ${ols?.result.r_squared.toFixed(3) ?? "..."}; raqamli xizmatlar daromadning kuchliroq drayveri.`
+      : `Digital/traditional services effect ratio is ${betaRatio ? betaRatio.toFixed(2) : "..."}x, R? = ${ols?.result.r_squared.toFixed(3) ?? "..."}; digital services drive revenue more strongly.`,
     lang === "uz"
       ? `DEA-CCR samaradorlik ${dashboard?.dea_summary.ccr_score.toFixed(2) ?? "..."}; mintaqaviy rank #${dashboard?.dea_summary.rank_in_region ?? "..."} va maqsad 0.85+.`
       : `DEA-CCR efficiency is ${dashboard?.dea_summary.ccr_score.toFixed(2) ?? "..."}; regional rank #${dashboard?.dea_summary.rank_in_region ?? "..."} with a 0.85+ target.`,

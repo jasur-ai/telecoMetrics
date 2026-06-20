@@ -42,7 +42,7 @@ function Page() {
               <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
               <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
               <Radar name="Current" dataKey="score" stroke="var(--color-gold)" fill="var(--color-gold)" fillOpacity={0.45} />
-              <Radar name="Target 2025" dataKey="target" stroke="var(--color-navy)" fill="var(--color-navy)" fillOpacity={0.15} />
+              <Radar name="Target 2028" dataKey="target" stroke="var(--color-navy)" fill="var(--color-navy)" fillOpacity={0.15} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
             </RadarChart>

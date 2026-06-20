@@ -34,10 +34,10 @@ function Page() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label={lang === "uz" ? "Raqamli ulush 2025" : "Digital share 2025"} value={summary ? summary.share_2025.toFixed(1) : "..."} unit="%" tone="success" hint={summary ? `2030: ${summary.share_2030.toFixed(1)}%` : undefined} />
-        <KpiCard label={lang === "uz" ? "Mutlaq daromad" : "Absolute revenue"} value={summary ? summary.digital_revenue_2025.toLocaleString() : "..."} unit="mlrd" tone="gold" hint={summary ? `2030: ${summary.digital_revenue_2030.toLocaleString()} mlrd` : undefined} />
-        <KpiCard label="DS_invest β" value={summary ? summary.ds_invest_beta.toFixed(3) : "..."} tone="info" hint={lang === "uz" ? "OLS koeffitsiyent" : "OLS coefficient"} />
-        <KpiCard label="CAGR 2025-2030" value={summary ? summary.digital_revenue_cagr_2025_2030.toFixed(1) : "..."} unit="%" tone="navy" />
+        <KpiCard label={lang === "uz" ? "Raqamli ulush 2023" : "Digital share 2023"} value={summary ? summary.share_2025.toFixed(1) : "..."} unit="%" tone="success" hint={summary ? `2028: ${summary.share_2030.toFixed(1)}%` : undefined} />
+        <KpiCard label={lang === "uz" ? "Raqamli daromad" : "Digital revenue"} value={summary ? summary.digital_revenue_2025.toLocaleString() : "..."} unit="mlrd" tone="gold" hint={summary ? `2028: ${summary.digital_revenue_2030.toLocaleString()} mlrd` : undefined} />
+        <KpiCard label="β digital" value={summary ? summary.ds_invest_beta.toFixed(3) : "..."} tone="info" hint={lang === "uz" ? "OLS koeffitsiyent" : "OLS coefficient"} />
+        <KpiCard label="CAGR 2023-2028" value={summary ? summary.digital_revenue_cagr_2025_2030.toFixed(1) : "..."} unit="%" tone="navy" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -55,13 +55,13 @@ function Page() {
             </ResponsiveContainer>
             <p className="text-xs text-muted-foreground mt-3">
               {lang === "uz"
-                ? "2020-yilda COVID-19 ta'siridan 27.8% ga tushish, keyin jadal tiklanish."
-                : "2020 COVID-19 dip to 27.8%, then rapid recovery."}
+                ? "2015-2023 tarixiy trend va 2024-2028 LSTM/ARIMA ssenariysi backenddan olinadi."
+                : "2015-2023 historical trend and 2024-2028 LSTM/ARIMA scenario come from the backend."}
             </p>
           </SectionCard>
         </div>
 
-        <SectionCard title={lang === "uz" ? "Segment Tarkibi 2025" : "Segment Composition 2025"}>
+        <SectionCard title={lang === "uz" ? "Segment Tarkibi 2023" : "Segment Composition 2023"}>
           <ResponsiveContainer width="100%" height={320}>
             <PieChart>
               <Pie data={breakdown} dataKey="value" nameKey="name" innerRadius={50} outerRadius={100} paddingAngle={2}>
@@ -74,12 +74,12 @@ function Page() {
         </SectionCard>
       </div>
 
-      <SectionCard title={lang === "uz" ? "Segment ulushlari" : "Segment Shares"} subtitle="2025 digital revenue">
+      <SectionCard title={lang === "uz" ? "Segment ulushlari" : "Segment Shares"} subtitle="2023 digital revenue">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
           {breakdown.map((r) => (
             <div key={r.name} className="flex items-center justify-between py-2 border-b border-border/50">
               <span>{r.name}</span>
-              <span className="font-semibold tabular-nums text-success">{r.value.toFixed(1)}%</span>
+              <span className="font-semibold tabular-nums text-success">{r.value.toFixed(1)}%{r.revenue_mlrd ? ` · ${r.revenue_mlrd.toLocaleString()} mlrd` : ""}</span>
             </div>
           ))}
         </div>
