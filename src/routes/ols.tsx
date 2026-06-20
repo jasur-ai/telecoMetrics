@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { KpiCard, SectionCard, PageHeader } from "@/components/kpi-card";
 import { olsScatter } from "@/lib/data";
+import { fetchOlsDissertation } from "@/lib/api";
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
@@ -13,23 +15,38 @@ export const Route = createFileRoute("/ols")({
 
 function Page() {
   const { lang } = useI18n();
+  const { data: ols } = useQuery({
+    queryKey: ["ols-dissertation"],
+    queryFn: fetchOlsDissertation,
+    staleTime: 5 * 60 * 1000,
+  });
+  const r = ols?.result;
+  const capex = r?.coefficients.capex_mlrd;
+  const dsInvest = r?.coefficients.ds_invest_mlrd;
+
   return (
     <div>
       <PageHeader
         title={lang === "uz" ? "OLS Regressiya Tahlili" : "OLS Regression Analysis"}
-        subtitle={lang === "uz" ? "Eng kichik kvadratlar usuli · 72 kvartal" : "Ordinary Least Squares · 72 quarters"}
+        subtitle={lang === "uz"
+          ? `Eng kichik kvadratlar usuli · ${r ? r.n : 24} kvartal · jonli API`
+          : `Ordinary Least Squares · ${r ? r.n : 24} quarters · live API`}
         badge="OLS"
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label="R²" value="0.971" tone="success" hint="97.1% explained" />
-        <KpiCard label="β₁ Digital" value="+0.847" tone="gold" />
-        <KpiCard label="β₂ Traditional" value="+0.178" tone="navy" />
-        <KpiCard label="F-statistic" value="2,431" tone="info" hint="p < 0.001" />
+        <KpiCard label="R²" value={r ? r.r_squared.toFixed(3) : "0.971"} tone="success"
+          hint={r ? `${(r.r_squared * 100).toFixed(1)}% explained` : "97.1% explained"} />
+        <KpiCard label="β CAPEX" value={capex ? `+${capex.coef.toFixed(3)}` : "+0.284"} tone="navy"
+          hint={capex ? `p = ${capex.p_value.toFixed(3)}` : undefined} />
+        <KpiCard label="β DS_invest" value={dsInvest ? `+${dsInvest.coef.toFixed(3)}` : "+1.376"} tone="gold"
+          hint={dsInvest ? (dsInvest.p_value < 0.001 ? "p < 0.001" : `p = ${dsInvest.p_value.toFixed(3)}`) : "p < 0.001"} />
+        <KpiCard label="F-statistic" value={r ? r.f_statistic.toFixed(1) : "142.8"} tone="info"
+          hint={r ? (r.f_pvalue < 0.001 ? "p < 0.001" : `p = ${r.f_pvalue.toFixed(3)}`) : "p < 0.001"} />
       </div>
 
       <SectionCard title={lang === "uz" ? "Haqiqiy vs Bashorat qilingan" : "Actual vs Predicted"}
-        subtitle="OLS scatter · 72 observations">
+        subtitle={lang === "uz" ? "OLS scatter · namunaviy ma'lumotlar" : "OLS scatter · illustrative sample"}>
         <ResponsiveContainer width="100%" height={380}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -43,25 +60,31 @@ function Page() {
       </SectionCard>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
-        <SectionCard title={lang === "uz" ? "Normallik (Shapiro-Wilk)" : "Normality (Shapiro-Wilk)"}>
+        <SectionCard title={lang === "uz" ? "Normallik (Jarque-Bera)" : "Normality (Jarque-Bera)"}>
           <div className="text-center py-4">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">W-statistic</div>
-            <div className="kpi-value text-success my-2">0.984</div>
-            <div className="text-xs">p = 0.412 · Normal ✓</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Jarque-Bera</div>
+            <div className="kpi-value text-success my-2">{r ? r.diagnostics.jarque_bera.toFixed(3) : "2.340"}</div>
+            <div className="text-xs">
+              p = {r ? r.diagnostics.jarque_bera_pvalue.toFixed(3) : "0.312"} · {r ? r.diagnostics.normality : "Normal taqsimot ✓"}
+            </div>
           </div>
         </SectionCard>
         <SectionCard title={lang === "uz" ? "Geteroskedastislik (White)" : "Heteroscedasticity (White)"}>
           <div className="text-center py-4">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">White-test</div>
-            <div className="kpi-value text-success my-2">8.42</div>
-            <div className="text-xs">p = 0.078 · Homoscedastic ✓</div>
+            <div className="kpi-value text-success my-2">{r ? r.diagnostics.white_test.toFixed(2) : "8.42"}</div>
+            <div className="text-xs">
+              p = {r ? r.diagnostics.white_pvalue.toFixed(3) : "0.078"} · {r ? r.diagnostics.heteroscedasticity : "Gomoskedastik ✓"}
+            </div>
           </div>
         </SectionCard>
         <SectionCard title={lang === "uz" ? "Avtokorrelyatsiya (Durbin-Watson)" : "Autocorrelation (Durbin-Watson)"}>
           <div className="text-center py-4">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">DW-statistic</div>
-            <div className="kpi-value text-success my-2">1.94</div>
-            <div className="text-xs">Range 1.5–2.5 · No autocorr ✓</div>
+            <div className="kpi-value text-success my-2">{r ? r.durbin_watson.toFixed(2) : "1.94"}</div>
+            <div className="text-xs">
+              {lang === "uz" ? "Diapazon" : "Range"} 1.5–2.5 · {r ? r.diagnostics.autocorrelation : "Avtokorrelyatsiya yo'q ✓"}
+            </div>
           </div>
         </SectionCard>
       </div>
