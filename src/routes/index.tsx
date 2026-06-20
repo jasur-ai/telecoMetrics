@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { KpiCard, SectionCard, PageHeader } from "@/components/kpi-card";
-import { fetchDashboardSummary, fetchOlsDissertation } from "@/lib/api";
+import { fetchDashboardSummary, fetchDmmUzbtk, fetchGarchRevenueUzbtk, fetchMonteCarloNpvUzbtk, fetchOlsDissertation } from "@/lib/api";
 import {
   AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -30,6 +30,21 @@ function Dashboard() {
   const { data: ols } = useQuery({
     queryKey: ["ols-dissertation"],
     queryFn: fetchOlsDissertation,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: garch } = useQuery({
+    queryKey: ["garch-revenue-uzbtk"],
+    queryFn: fetchGarchRevenueUzbtk,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: dmm } = useQuery({
+    queryKey: ["dmm-uzbtk"],
+    queryFn: fetchDmmUzbtk,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: monteCarlo } = useQuery({
+    queryKey: ["monte-carlo-npv-uzbtk"],
+    queryFn: fetchMonteCarloNpvUzbtk,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -96,8 +111,8 @@ function Dashboard() {
         <KpiCard label={t("kpi_r2")} value={ols ? ols.result.r_squared.toFixed(3) : (live ? live.ols_key_result.r_squared.toFixed(3) : "0.971")} tone="success"
           hint={lang === "uz" ? "Juda yuqori tushuntirish kuchi" : "Very high explanatory power"}
           icon={<Award className="size-4" />} />
-        <KpiCard label={t("kpi_npv")} value="15,200" unit={t("bln_sum")} tone="navy"
-          hint="P ≥ 98.2%" icon={<Wallet className="size-4" />} />
+        <KpiCard label={t("kpi_npv")} value={monteCarlo ? monteCarlo.summary.mean_npv.toLocaleString() : "..."} unit={t("bln_sum")} tone="navy"
+          hint={monteCarlo ? `P = ${monteCarlo.summary.success_probability.toFixed(1)}%` : undefined} icon={<Wallet className="size-4" />} />
       </div>
 
       {/* Charts row 1 */}
@@ -177,18 +192,18 @@ function Dashboard() {
 
         <SectionCard title={t("garch_results")} subtitle="ARCH/GARCH volatility model">
           <div className="space-y-3 text-sm">
-            <Row label="α₁ (ARCH)" value="0.412" tone="gold" />
-            <Row label="β₁ (GARCH)" value="0.498" tone="gold" />
-            <Row label="α₁ + β₁" value="0.910" tone="destructive" hint={lang === "uz" ? "< 1 barqarorlik ✓" : "< 1 stationary ✓"} />
-            <Row label={lang === "uz" ? "Yillik volatillik" : "Annual volatility"} value="14.8%" tone="info" />
+            <Row label="α₁ (ARCH)" value={garch ? garch.parameters.alpha.toFixed(3) : "..."} tone="gold" />
+            <Row label="β₁ (GARCH)" value={garch ? garch.parameters.beta.toFixed(3) : "..."} tone="gold" />
+            <Row label="α₁ + β₁" value={garch ? garch.parameters.persistence.toFixed(3) : "..."} tone="destructive" hint={garch?.summary.stationary ? (lang === "uz" ? "< 1 barqarorlik" : "< 1 stationary") : undefined} />
+            <Row label={lang === "uz" ? "Yillik volatillik" : "Annual volatility"} value={garch ? `${garch.summary.annual_volatility.toFixed(1)}%` : "..."} tone="info" />
           </div>
         </SectionCard>
 
         <SectionCard title={t("dmm_results")} subtitle="TM Forum Digital Maturity Model">
           <div className="space-y-3 text-sm">
-            <Row label="2022 → 2023" value="3.18 → 3.42" tone="navy" hint="+0.24" />
-            <Row label={lang === "uz" ? "Yetuklik darajasi" : "Maturity stage"} value={lang === "uz" ? "Bosqich 3" : "Stage 3"} tone="info" />
-            <Row label={lang === "uz" ? "Maqsad 2025" : "Goal 2025"} value="4.0 / 5.0" tone="success" />
+            <Row label="Previous -> current" value={dmm ? `${dmm.summary.previous_score.toFixed(2)} -> ${dmm.summary.current_score.toFixed(2)}` : "..."} tone="navy" hint={dmm ? `+${dmm.summary.delta.toFixed(2)}` : undefined} />
+            <Row label={lang === "uz" ? "Yetuklik darajasi" : "Maturity stage"} value={dmm ? (lang === "uz" ? `Bosqich ${dmm.summary.maturity_stage}` : `Stage ${dmm.summary.maturity_stage}`) : "..."} tone="info" />
+            <Row label={lang === "uz" ? "Maqsad 2025" : "Goal 2025"} value={dmm ? `${dmm.summary.target_2025.toFixed(1)} / 5.0` : "..."} tone="success" />
             <Row label={lang === "uz" ? "Mintaqaviy o'rin" : "Regional rank"} value={lang === "uz" ? "Infra: 1 · Xizmat: 3" : "Infra: 1 · Service: 3"} tone="gold" />
           </div>
         </SectionCard>

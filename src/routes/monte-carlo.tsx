@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { KpiCard, SectionCard, PageHeader } from "@/components/kpi-card";
-import { monteCarlo, mcDistribution } from "@/lib/data";
+import { fetchMonteCarloNpvUzbtk } from "@/lib/api";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 export const Route = createFileRoute("/monte-carlo")({
@@ -11,6 +12,14 @@ export const Route = createFileRoute("/monte-carlo")({
 
 function Page() {
   const { lang } = useI18n();
+  const { data } = useQuery({
+    queryKey: ["monte-carlo-npv-uzbtk"],
+    queryFn: fetchMonteCarloNpvUzbtk,
+    staleTime: 5 * 60 * 1000,
+  });
+  const summary = data?.summary;
+  const scenarios = data?.scenarios ?? [];
+  const distribution = data?.distribution ?? [];
   const tones: Record<string, string> = {
     destructive: "border-destructive text-destructive",
     gold: "border-gold text-gold",
@@ -25,14 +34,14 @@ function Page() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label={lang === "uz" ? "O'rta NPV" : "Mean NPV"} value="15,200" unit="mlrd" tone="gold" />
-        <KpiCard label={lang === "uz" ? "Muvaffaqiyat ehtimoli" : "Success probability"} value="98.2" unit="%" tone="success" />
-        <KpiCard label="IRR (base)" value="38" unit="%" tone="info" />
-        <KpiCard label={lang === "uz" ? "Qaytarim" : "Payback"} value="3.2" unit={lang === "uz" ? "yil" : "yrs"} tone="navy" />
+        <KpiCard label={lang === "uz" ? "O'rta NPV" : "Mean NPV"} value={summary ? summary.mean_npv.toLocaleString() : "..."} unit="mlrd" tone="gold" />
+        <KpiCard label={lang === "uz" ? "Muvaffaqiyat ehtimoli" : "Success probability"} value={summary ? summary.success_probability.toFixed(1) : "..."} unit="%" tone="success" />
+        <KpiCard label="IRR (base)" value={summary ? summary.irr_base.toFixed(1) : "..."} unit="%" tone="info" />
+        <KpiCard label={lang === "uz" ? "Qaytarim" : "Payback"} value={summary ? summary.payback_years.toFixed(1) : "..."} unit={lang === "uz" ? "yil" : "yrs"} tone="navy" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        {monteCarlo.scenarios.map((s) => (
+        {scenarios.map((s) => (
           <div key={s.name} className={`card-elevated p-5 border-l-4 ${tones[s.color]}`}>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">{s.name}</div>
             <div className="kpi-value mt-2">{s.npv.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">mlrd</span></div>
@@ -47,7 +56,7 @@ function Page() {
 
       <SectionCard title={lang === "uz" ? "NPV Taqsimoti" : "NPV Distribution"} subtitle="10,000 Monte-Carlo iterations">
         <ResponsiveContainer width="100%" height={340}>
-          <AreaChart data={mcDistribution}>
+          <AreaChart data={distribution}>
             <defs>
               <linearGradient id="mcGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--color-gold)" stopOpacity={0.55} />
@@ -59,8 +68,8 @@ function Page() {
               tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
             <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
             <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-            <ReferenceLine x={15200} stroke="var(--color-navy)" strokeDasharray="4 4"
-              label={{ value: "Mean 15,200", position: "top", fill: "var(--color-navy)", fontSize: 11 }} />
+            <ReferenceLine x={summary?.mean_npv ?? 0} stroke="var(--color-navy)" strokeDasharray="4 4"
+              label={{ value: summary ? `Mean ${summary.mean_npv.toLocaleString()}` : "Mean", position: "top", fill: "var(--color-navy)", fontSize: 11 }} />
             <Area type="monotone" dataKey="freq" stroke="var(--color-gold)" fill="url(#mcGrad)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>

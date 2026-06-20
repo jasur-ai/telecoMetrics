@@ -62,7 +62,7 @@ export const olsScatter = Array.from({ length: 72 }, (_, i) => {
 
 export const garchVolatility = Array.from({ length: 72 }, (_, i) => {
   const base = 8 + Math.sin(i * 0.3) * 3 + (i > 40 ? 4 : 0);
-  return { q: i + 1, vol: Number((base + Math.random() * 2).toFixed(2)) };
+  return { q: i + 1, vol: Number((base + (Math.sin(i * 1.7) + 1)).toFixed(2)) };
 });
 
 export const monteCarlo = {

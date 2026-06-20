@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { SectionCard, PageHeader } from "@/components/kpi-card";
-import { regional } from "@/lib/data";
+import { fetchBenchmark2025 } from "@/lib/api";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend,
@@ -15,9 +16,33 @@ export const Route = createFileRoute("/regional")({
 
 function Page() {
   const { lang } = useI18n();
+  const { data } = useQuery({
+    queryKey: ["benchmark-2025"],
+    queryFn: fetchBenchmark2025,
+    staleTime: 5 * 60 * 1000,
+  });
+  const rawRegional = data?.data ?? [];
+  const totalRevenue = rawRegional.reduce((sum, r) => sum + r.revenue_mlrd, 0) || 1;
+  const regional = rawRegional.map((r) => ({
+    country: r.country,
+    infra: r.coverage_pct,
+    digital: r.digital_rev_pct,
+    revenue: r.revenue_mlrd,
+    revenueShare: (r.revenue_mlrd / totalRevenue) * 100,
+    efficiency: r.ccr_score * 100,
+    maturity: r.dmm_score,
+    highlight: r.code === "UZBTK",
+  }));
+  const maxRevenue = Math.max(...regional.map((r) => r.revenue), 1);
   const radarData = ["infra", "digital", "revenue", "efficiency", "maturity"].map((key) => {
     const row: any = { metric: key };
-    regional.forEach((r) => { row[r.country] = key === "maturity" ? r[key] * 20 : r[key as keyof typeof r]; });
+    regional.forEach((r) => {
+      row[r.country] = key === "maturity"
+        ? r.maturity * 20
+        : key === "revenue"
+          ? (r.revenue / maxRevenue) * 100
+          : r[key as keyof typeof r];
+    });
     return row;
   });
 
@@ -60,7 +85,7 @@ function Page() {
                   <td className="py-2 pr-3">{r.country}{r.highlight && " ★"}</td>
                   <td className="py-2 px-3 text-right tabular-nums">{r.infra}</td>
                   <td className="py-2 px-3 text-right tabular-nums">{r.digital}</td>
-                  <td className="py-2 px-3 text-right tabular-nums">{r.revenue}</td>
+                  <td className="py-2 px-3 text-right tabular-nums">{r.revenueShare.toFixed(1)}</td>
                   <td className="py-2 px-3 text-right tabular-nums">{(r.efficiency / 100).toFixed(2)}</td>
                   <td className="py-2 pl-3 text-right tabular-nums">{r.maturity}</td>
                 </tr>

@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { KpiCard, SectionCard, PageHeader } from "@/components/kpi-card";
-import { olsScatter } from "@/lib/data";
 import { fetchOlsDissertation } from "@/lib/api";
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -21,6 +20,7 @@ function Page() {
     staleTime: 5 * 60 * 1000,
   });
   const r = ols?.result;
+  const scatter = ols?.scatter_data ?? [];
   const capex = r?.coefficients.capex_mlrd;
   const dsInvest = r?.coefficients.ds_invest_mlrd;
 
@@ -46,7 +46,7 @@ function Page() {
       </div>
 
       <SectionCard title={lang === "uz" ? "Haqiqiy vs Bashorat qilingan" : "Actual vs Predicted"}
-        subtitle={lang === "uz" ? "OLS scatter · namunaviy ma'lumotlar" : "OLS scatter · illustrative sample"}>
+        subtitle={lang === "uz" ? "OLS scatter · real hisoblangan fitted values" : "OLS scatter · computed fitted values"}>
         <ResponsiveContainer width="100%" height={380}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -54,7 +54,7 @@ function Page() {
             <YAxis type="number" dataKey="predicted" name="Predicted" stroke="var(--color-muted-foreground)" fontSize={11} />
             <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} cursor={{ strokeDasharray: "3 3" }} />
             <ReferenceLine segment={[{ x: 1000, y: 1000 }, { x: 7000, y: 7000 }]} stroke="var(--color-navy)" strokeDasharray="5 5" />
-            <Scatter data={olsScatter} fill="var(--color-gold)" fillOpacity={0.65} />
+            <Scatter data={scatter} fill="var(--color-gold)" fillOpacity={0.65} />
           </ScatterChart>
         </ResponsiveContainer>
       </SectionCard>

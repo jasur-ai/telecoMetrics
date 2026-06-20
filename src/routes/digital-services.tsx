@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { KpiCard, SectionCard, PageHeader } from "@/components/kpi-card";
-import { digitalShare, digitalBreakdown } from "@/lib/data";
+import { fetchDigitalServicesUzbtk } from "@/lib/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -16,6 +17,14 @@ const COLORS = ["var(--color-gold)", "var(--color-navy)", "var(--color-info)", "
 
 function Page() {
   const { lang } = useI18n();
+  const { data } = useQuery({
+    queryKey: ["digital-services-uzbtk"],
+    queryFn: fetchDigitalServicesUzbtk,
+    staleTime: 5 * 60 * 1000,
+  });
+  const trend = data?.trend ?? [];
+  const breakdown = data?.breakdown_2025 ?? [];
+  const summary = data?.summary;
   return (
     <div>
       <PageHeader
@@ -25,10 +34,10 @@ function Page() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label={lang === "uz" ? "Raqamli ulush 2023" : "Digital share 2023"} value="34.2" unit="%" tone="success" hint="2015: 14.8%" />
-        <KpiCard label={lang === "uz" ? "Mutlaq daromad" : "Absolute revenue"} value="5,900" unit="mlrd" tone="gold" hint="+602% vs 2015" />
-        <KpiCard label="Top segment β" value="0.912" tone="info" hint={lang === "uz" ? "Bulut xizmatlar" : "Cloud services"} />
-        <KpiCard label="CAGR 2015-2023" value="27.6" unit="%" tone="navy" />
+        <KpiCard label={lang === "uz" ? "Raqamli ulush 2025" : "Digital share 2025"} value={summary ? summary.share_2025.toFixed(1) : "..."} unit="%" tone="success" hint={summary ? `2030: ${summary.share_2030.toFixed(1)}%` : undefined} />
+        <KpiCard label={lang === "uz" ? "Mutlaq daromad" : "Absolute revenue"} value={summary ? summary.digital_revenue_2025.toLocaleString() : "..."} unit="mlrd" tone="gold" hint={summary ? `2030: ${summary.digital_revenue_2030.toLocaleString()} mlrd` : undefined} />
+        <KpiCard label="DS_invest β" value={summary ? summary.ds_invest_beta.toFixed(3) : "..."} tone="info" hint={lang === "uz" ? "OLS koeffitsiyent" : "OLS coefficient"} />
+        <KpiCard label="CAGR 2025-2030" value={summary ? summary.digital_revenue_cagr_2025_2030.toFixed(1) : "..."} unit="%" tone="navy" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -36,7 +45,7 @@ function Page() {
           <SectionCard title={lang === "uz" ? "Raqamli Xizmatlar O'sish Dinamikasi" : "Digital Services Growth Dynamics"}
             subtitle={lang === "uz" ? "Raqamli ulush, %" : "Digital share, %"}>
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={digitalShare}>
+              <BarChart data={trend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
@@ -52,11 +61,11 @@ function Page() {
           </SectionCard>
         </div>
 
-        <SectionCard title={lang === "uz" ? "Segment Tarkibi 2023" : "Segment Composition 2023"}>
+        <SectionCard title={lang === "uz" ? "Segment Tarkibi 2025" : "Segment Composition 2025"}>
           <ResponsiveContainer width="100%" height={320}>
             <PieChart>
-              <Pie data={digitalBreakdown} dataKey="value" nameKey="name" innerRadius={50} outerRadius={100} paddingAngle={2}>
-                {digitalBreakdown.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              <Pie data={breakdown} dataKey="value" nameKey="name" innerRadius={50} outerRadius={100} paddingAngle={2}>
+                {breakdown.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
@@ -65,21 +74,12 @@ function Page() {
         </SectionCard>
       </div>
 
-      <SectionCard title={lang === "uz" ? "β Koeffitsiyentlar — Segment Bo'yicha" : "β Coefficients — By Segment"} subtitle="OLS regression">
+      <SectionCard title={lang === "uz" ? "Segment ulushlari" : "Segment Shares"} subtitle="2025 digital revenue">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-          {[
-            { name: "Bulut / Cloud", b: 0.912 },
-            { name: "Mobil internet / Mobile internet", b: 0.884 },
-            { name: "IPTV / OTT", b: 0.861 },
-            { name: "B2B SaaS", b: 0.847 },
-            { name: "Raqamli to'lov / Digital payments", b: 0.823 },
-            { name: "Ovozli xizmatlar / Voice", b: 0.178 },
-            { name: "SMS", b: 0.152 },
-            { name: "Roaming", b: 0.165 },
-          ].map((r) => (
+          {breakdown.map((r) => (
             <div key={r.name} className="flex items-center justify-between py-2 border-b border-border/50">
               <span>{r.name}</span>
-              <span className={`font-semibold tabular-nums ${r.b > 0.5 ? "text-success" : "text-muted-foreground"}`}>β = {r.b}</span>
+              <span className="font-semibold tabular-nums text-success">{r.value.toFixed(1)}%</span>
             </div>
           ))}
         </div>

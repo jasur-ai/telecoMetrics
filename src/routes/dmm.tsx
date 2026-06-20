@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { KpiCard, SectionCard, PageHeader } from "@/components/kpi-card";
-import { dmmDomains } from "@/lib/data";
+import { fetchDmmUzbtk } from "@/lib/api";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 export const Route = createFileRoute("/dmm")({
@@ -11,6 +12,13 @@ export const Route = createFileRoute("/dmm")({
 
 function Page() {
   const { lang } = useI18n();
+  const { data } = useQuery({
+    queryKey: ["dmm-uzbtk"],
+    queryFn: fetchDmmUzbtk,
+    staleTime: 5 * 60 * 1000,
+  });
+  const domains = data?.domains ?? [];
+  const summary = data?.summary;
   return (
     <div>
       <PageHeader
@@ -20,16 +28,16 @@ function Page() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label={lang === "uz" ? "Joriy ball" : "Current score"} value="3.42" unit="/ 5.0" tone="gold" />
-        <KpiCard label={lang === "uz" ? "O'tgan yil" : "Previous"} value="3.18" tone="navy" hint="+0.24" />
-        <KpiCard label={lang === "uz" ? "Yetuklik bosqichi" : "Maturity stage"} value="3" unit={lang === "uz" ? "Belgilangan" : "Defined"} tone="info" />
-        <KpiCard label={lang === "uz" ? "Eng zaif" : "Weakest"} value="2.84" tone="destructive" hint="Customer Experience" />
+        <KpiCard label={lang === "uz" ? "Joriy ball" : "Current score"} value={summary ? summary.current_score.toFixed(2) : "..."} unit="/ 5.0" tone="gold" />
+        <KpiCard label={lang === "uz" ? "O'tgan yil" : "Previous"} value={summary ? summary.previous_score.toFixed(2) : "..."} tone="navy" hint={summary ? `+${summary.delta.toFixed(2)}` : undefined} />
+        <KpiCard label={lang === "uz" ? "Yetuklik bosqichi" : "Maturity stage"} value={summary ? summary.maturity_stage : "..."} unit={lang === "uz" ? "Belgilangan" : "Defined"} tone="info" />
+        <KpiCard label={lang === "uz" ? "Eng zaif" : "Weakest"} value={summary ? summary.weakest_score.toFixed(2) : "..."} tone="destructive" hint={summary?.weakest_domain} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <SectionCard title={lang === "uz" ? "Domenlar bo'yicha Radar" : "Radar by Domain"}>
           <ResponsiveContainer width="100%" height={360}>
-            <RadarChart data={dmmDomains}>
+            <RadarChart data={domains}>
               <PolarGrid stroke="var(--color-border)" />
               <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
               <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
@@ -43,7 +51,7 @@ function Page() {
 
         <SectionCard title={lang === "uz" ? "Domen Ko'rsatkichlari" : "Domain Scores"}>
           <div className="space-y-4">
-            {dmmDomains.map((d) => (
+            {domains.map((d) => (
               <div key={d.name}>
                 <div className="flex justify-between text-sm mb-1.5">
                   <span className="text-foreground/80">{d.name}</span>

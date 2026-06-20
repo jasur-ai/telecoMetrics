@@ -2,8 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { KpiCard, SectionCard, PageHeader } from "@/components/kpi-card";
-import { deaInputs } from "@/lib/data";
-import { fetchDeaResults2025 } from "@/lib/api";
+import { fetchDeaResults2025, fetchMetrics } from "@/lib/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
@@ -21,9 +20,29 @@ function Page() {
     queryFn: fetchDeaResults2025,
     staleTime: 5 * 60 * 1000,
   });
+  const { data: metrics } = useQuery({
+    queryKey: ["metrics", "UZBTK", 2025],
+    queryFn: () => fetchMetrics("UZBTK", 2025, 2025, false),
+    staleTime: 5 * 60 * 1000,
+  });
   const results = dea?.results ?? [];
   const ccr = dea?.summary.uzbektelecom_ccr ?? 0.76;
+  const y2025 = metrics?.data[0];
   const slackPct = Math.round((1 - ccr) * 100);
+  const rawInputs = y2025 ? [
+    { name: "Asosiy kapital / CAPEX", value: `${y2025.capex_mlrd.toLocaleString()} mlrd`, raw: y2025.capex_mlrd },
+    { name: "Xodimlar soni / Headcount", value: y2025.employees.toLocaleString(), raw: y2025.employees },
+    { name: "Tarmoq infratuzilmasi / Fiber", value: `${y2025.fiber_km?.toLocaleString() ?? "-"} km`, raw: y2025.fiber_km ?? 0 },
+    { name: "IT xarajatlari / DS invest", value: `${y2025.ds_invest_mlrd?.toLocaleString() ?? "-"} mlrd`, raw: y2025.ds_invest_mlrd ?? 0 },
+    { name: "OPEX", value: `${y2025.opex_mlrd.toLocaleString()} mlrd`, raw: y2025.opex_mlrd },
+  ] : [];
+  const rawTotal = rawInputs.reduce((sum, item) => sum + item.raw, 0) || 1;
+  const maxInput = Math.max(...rawInputs.map((r) => r.raw), 1);
+  const deaInputs = rawInputs.map((item) => ({
+    ...item,
+    weight: item.raw / rawTotal,
+    contrib: Math.round(Math.min(100, (ccr * item.raw / maxInput) * 100)),
+  }));
 
   return (
     <div>
@@ -41,17 +60,17 @@ function Page() {
           <h2 className="font-display font-bold text-navy-deep">{lang === "uz" ? "Infratuzilma Paradoksi" : "Infrastructure Paradox"}</h2>
           <p className="text-sm text-foreground/80 mt-1">
             {lang === "uz"
-              ? `Tarmoq qamrovi 94.2%, tola optik 48,500 km — mintaqada birinchi. Ammo DEA-CCR samaradorligi ${ccr.toFixed(2)} — ${dea ? `#${dea.summary.uzbektelecom_rank} o'rin mintaqada` : "3-o'rin"}. Infratuzilmadan to'liq foydalanilmayapti.`
-              : `Network coverage 94.2%, fiber 48,500 km — regional #1. Yet DEA-CCR efficiency is only ${ccr.toFixed(2)} (${dea ? `rank #${dea.summary.uzbektelecom_rank}` : "rank #3"} regionally). The infrastructure is under-utilized.`}
+              ? `Tarmoq qamrovi ${y2025?.coverage_pct?.toFixed(1) ?? "..."}%, tola optik ${y2025?.fiber_km?.toLocaleString() ?? "..."} km — mintaqada birinchi. Ammo DEA-CCR samaradorligi ${ccr.toFixed(2)} — ${dea ? `#${dea.summary.uzbektelecom_rank} o'rin mintaqada` : "3-o'rin"}. Infratuzilmadan to'liq foydalanilmayapti.`
+              : `Network coverage ${y2025?.coverage_pct?.toFixed(1) ?? "..."}%, fiber ${y2025?.fiber_km?.toLocaleString() ?? "..."} km — regional #1. Yet DEA-CCR efficiency is only ${ccr.toFixed(2)} (${dea ? `rank #${dea.summary.uzbektelecom_rank}` : "rank #3"} regionally). The infrastructure is under-utilized.`}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard label="DEA-CCR" value={ccr.toFixed(2)} tone="gold" hint={lang === "uz" ? `${slackPct}% zaxira` : `${slackPct}% slack`} />
-        <KpiCard label={lang === "uz" ? "Tarmoq qamrovi" : "Network coverage"} value="94.2" unit="%" tone="success" hint="Regional #1" />
-        <KpiCard label={lang === "uz" ? "Tola optik" : "Fiber optic"} value="48,500" unit="km" tone="info" hint="2025" />
-        <KpiCard label="5G BS" value={dea ? "860" : "—"} unit={lang === "uz" ? "stansiya" : "stations"} tone="navy" hint="2025" />
+        <KpiCard label={lang === "uz" ? "Tarmoq qamrovi" : "Network coverage"} value={y2025?.coverage_pct?.toFixed(1) ?? "..."} unit="%" tone="success" hint="Regional #1" />
+        <KpiCard label={lang === "uz" ? "Tola optik" : "Fiber optic"} value={y2025?.fiber_km?.toLocaleString() ?? "..."} unit="km" tone="info" hint="2025" />
+        <KpiCard label="5G BS" value={y2025 ? y2025.bs_5g.toLocaleString() : "..."} unit={lang === "uz" ? "stansiya" : "stations"} tone="navy" hint="2025" />
       </div>
 
       <SectionCard title={lang === "uz" ? "DMU Samaradorlik Taqqoslamasi" : "DMU Efficiency Comparison"}

@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { SectionCard, PageHeader, KpiCard } from "@/components/kpi-card";
-import { forecast, forecastTargets } from "@/lib/data";
+import { fetchForecastAll2030, fetchForecastUzbtk } from "@/lib/api";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart } from "recharts";
 
 export const Route = createFileRoute("/forecast")({
@@ -11,23 +12,48 @@ export const Route = createFileRoute("/forecast")({
 
 function Page() {
   const { lang } = useI18n();
+  const { data: forecastResponse } = useQuery({
+    queryKey: ["forecast-uzbtk", "revenue_mlrd"],
+    queryFn: () => fetchForecastUzbtk("revenue_mlrd"),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: all2030 } = useQuery({
+    queryKey: ["forecast-all-2030"],
+    queryFn: fetchForecastAll2030,
+    staleTime: 5 * 60 * 1000,
+  });
+  const forecast = forecastResponse?.base_scenario.map((base) => ({
+    year: base.year,
+    base: base.value,
+    optimistic: forecastResponse.scenarios.optimistic.find((r) => r.year === base.year)?.value ?? base.value,
+    pessimistic: forecastResponse.scenarios.pessimistic.find((r) => r.year === base.year)?.value ?? base.value,
+  })) ?? [];
+  const finalYear = forecast.at(-1);
+  const forecastTargets = all2030?.comparison.map((r) => ({
+    metric: r.label,
+    current: typeof r.actual_2025 === "number" ? r.actual_2025.toLocaleString() : "-",
+    p: "-",
+    b: typeof r.forecast_2030 === "number" ? r.forecast_2030.toLocaleString() : "-",
+    o: "-",
+    goal: r.cagr_pct != null ? `${r.cagr_pct.toFixed(1)}% CAGR` : "-",
+  })) ?? [];
   return (
     <div>
       <PageHeader
         title={lang === "uz" ? "Bashorat va Ssenariy Tahlili" : "Forecast & Scenario Analysis"}
-        subtitle={lang === "uz" ? "LSTM + ARIMA gibrid modeli · 2024–2028" : "LSTM + ARIMA hybrid · 2024–2028"}
-        badge="LSTM"
+        subtitle={lang === "uz" ? "OLS trend modeli · 2026-2030 · jonli API" : "OLS trend model · 2026-2030 · live API"}
+        badge="OLS"
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label="MAPE" value="3.8" unit="%" tone="success" />
-        <KpiCard label={lang === "uz" ? "Bazaviy 2028" : "Base 2028"} value="24,100" unit="mlrd" tone="gold" />
-        <KpiCard label={lang === "uz" ? "Eng yaxshi ssenariy" : "Best case"} value="32,400" unit="mlrd" tone="info" />
-        <KpiCard label={lang === "uz" ? "Maqsad oshish" : "Above target"} value="+18" unit="%" tone="navy" />
+        <KpiCard label="R² trend" value={forecastResponse?.trend_model[0]?.r_squared.toFixed(3) ?? "..."} tone="success" />
+        <KpiCard label={lang === "uz" ? "Bazaviy 2030" : "Base 2030"} value={finalYear ? finalYear.base.toLocaleString() : "..."} unit="mlrd" tone="gold" />
+        <KpiCard label={lang === "uz" ? "Eng yaxshi ssenariy" : "Best case"} value={finalYear ? finalYear.optimistic.toLocaleString() : "..."} unit="mlrd" tone="info" />
+        <KpiCard label="CAGR 2025-2030" value={forecastResponse ? forecastResponse.cagr_2025_2030.toFixed(1) : "..."} unit="%" tone="navy" />
       </div>
 
-      <SectionCard title={lang === "uz" ? "Daromad Bashorati 2024–2028" : "Revenue Forecast 2024–2028"}
-        subtitle="LSTM hybrid model · 3 scenarios">
+      <SectionCard title={lang === "uz" ? "Daromad Bashorati 2026-2030" : "Revenue Forecast 2026-2030"}
+        subtitle="OLS trend model · 3 scenarios">
         <ResponsiveContainer width="100%" height={360}>
           <ComposedChart data={forecast}>
             <defs>
@@ -49,7 +75,7 @@ function Page() {
       </SectionCard>
 
       <SectionCard title={lang === "uz" ? "Maqsad Ko'rsatkichlari Jadvali" : "Target Metrics Table"}
-        subtitle={lang === "uz" ? "3 ssenariy asosida 2028 yil" : "3 scenarios by 2028"}>
+        subtitle={lang === "uz" ? "2030 yil prognozi" : "2030 forecast"}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
